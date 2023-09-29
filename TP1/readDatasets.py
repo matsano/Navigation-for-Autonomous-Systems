@@ -154,8 +154,8 @@ def read_u2is(number):
 
     print('Reading u2is dataset')
 
-    fileLaser = open('dataset/u2is/laser_filt.txt', 'r')
-    fileOdom = open('dataset/u2is/odom_filt.txt', 'r')
+    fileLaser = open('dataset/U2IS/laser_filt.txt', 'r')
+    fileOdom = open('dataset/U2IS/odom_filt.txt', 'r')
 
     scanList = []
 

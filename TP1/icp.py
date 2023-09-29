@@ -8,6 +8,10 @@ from scipy.spatial import KDTree
 import math
 
 
+THRESHOLD = 0.05
+BEST_MATCHING_RATE = 0.8
+
+
 # A few helper function
 
 def angle_wrap(a):
@@ -62,7 +66,16 @@ def icp(model, data, maxIter, thres):
     # ----------------------- TODO ------------------------
     # Filter data points too close to each other
     # Put the result in dat_filt
-    dat_filt = dat
+    last_point = dat[:, 0]
+    filtered_data = [last_point]
+    for iPoint in range(len(dat[0])):
+        actual_point = dat[:, iPoint]
+        if np.linalg.norm(actual_point - last_point) > THRESHOLD:
+            filtered_data.append(actual_point)
+            last_point = actual_point
+    
+    dat_filt = np.stack(filtered_data, axis=1)
+    # dat_filt = dat
 
     # Initialize transformation to identity
     R = np.eye(2)
@@ -81,7 +94,11 @@ def icp(model, data, maxIter, thres):
         # you have to modify :
         # - 'dat_matched' with the points
         # - 'index' with the corresponding point index in ref
-        dat_matched = dat_filt
+        sorted_dist = np.sort(distance)
+        filtered_dist_mask = distance <= sorted_dist[int(BEST_MATCHING_RATE*(len(sorted_dist)-1))]
+        dat_matched = dat_filt[:, filtered_dist_mask]
+        index = index[filtered_dist_mask]
+        # dat_matched = dat_filt
 
 
         # ----- Compute transform

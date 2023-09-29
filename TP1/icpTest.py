@@ -33,13 +33,13 @@ for a in range(nb_test):
     R = np.array([[math.cos(randR), -math.sin(randR)], [math.sin(randR), math.cos(randR)]])
     scan = datasets.transform_scan(scanOriginal, R, randT)
 
-    # Displays initial positions
-    plt.cla()
-    # for stopping simulation with the esc key.
-    plt.gcf().canvas.mpl_connect('key_release_event', lambda event: [exit(0) if event.key == 'escape' else None])
-    plt.plot(refscan["x"], refscan["y"], "ob", label='Ref Scan')
-    plt.plot(scan["x"], scan["y"], ".r", label='Scan before ICP')
-    plt.axis("equal")
+    # # Displays initial positions
+    # plt.cla()
+    # # for stopping simulation with the esc key.
+    # plt.gcf().canvas.mpl_connect('key_release_event', lambda event: [exit(0) if event.key == 'escape' else None])
+    # plt.plot(refscan["x"], refscan["y"], "ob", label='Ref Scan')
+    # plt.plot(scan["x"], scan["y"], ".r", label='Scan before ICP')
+    # plt.axis("equal")
 
     # perform ICP
     R, t, error = icp.icp(refscan, scan, 200, 1e-7)
@@ -48,11 +48,11 @@ for a in range(nb_test):
     scan = datasets.transform_scan(scan, R, t)
     poseError[:, a] = np.transpose(scan["pose"] - scanTruePose)
 
-    # Display
-    plt.axis("equal")
-    plt.plot(scan["x"], scan["y"], ".g", label='Scan after ICP')
-    plt.legend()
-    plt.pause(0.1)
+    # # Display
+    # plt.axis("equal")
+    # plt.plot(scan["x"], scan["y"], ".g", label='Scan after ICP')
+    # plt.legend()
+    # plt.pause(0.1)
 
 
 time_elapsed = time.process_time() - time_start
