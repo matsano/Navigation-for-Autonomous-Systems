@@ -107,7 +107,14 @@ def observation_model(xVeh, iFeature, Map):
     # iFeature: observed amer index
     # Map: map of all amers
     
-    # ...................
+    # Landmark selected with index iFeature
+    landmark_selected = Map[:, iFeature]
+    
+    # Calculate z
+    z11 = np.sqrt((landmark_selected[0] - xVeh[0])**2 + (landmark_selected[1] - xVeh[1])**2)
+    z12 = np.arctan2((landmark_selected[1] - xVeh[1]), (landmark_selected[0] - xVeh[0])) - xVeh[2]
+    
+    z = np.array([z11, z12])
     
     return z
 
@@ -120,7 +127,18 @@ def get_obs_jac(xPred, iFeature, Map):
     # iFeature: observed amer index
     # Map: map of all amers
     
-    # ...................
+    # Landmark selected with index iFeature
+    landmark_selected = Map[:, iFeature]
+    
+    # Calculate Jacobian (jH)
+    dist_state_landmark = (landmark_selected[0] - xPred[0])**2 + (landmark_selected[1] - xPred[1])**2
+    
+    jH11 = - (landmark_selected[0] - xPred[0]) / np.sqrt(dist_state_landmark)
+    jH12 = - (landmark_selected[1] - xPred[1]) / np.sqrt(dist_state_landmark)
+    jH21 = (landmark_selected[1] - xPred[1]) / dist_state_landmark
+    jH22 = -(landmark_selected[0] - xPred[0]) / dist_state_landmark
+    
+    jH = np.array([[jH11[0], jH12[0], 0], [jH21[0], jH22[0], -1]])
 
     return jH
 
@@ -131,7 +149,10 @@ def F(x, u, dt_pred):
     # u: control input (Vx, Vy, angular rate)
     # dt_pred: time step
     
-    # ...................
+    Jac13 = dt_pred * (-u[0]*np.sin(x[2]) - u[1]*np.cos(x[2]))
+    Jac23 = dt_pred * (u[0]*np.cos(x[2]) - u[1]*np.sin(x[2]))
+    
+    Jac = np.array([[1, 0, Jac13[0]], [0, 1, Jac23[0]], [0, 0, 1]])
 
     return Jac
 
@@ -142,7 +163,13 @@ def G(x, u, dt_pred):
     # u: control input (Vx, Vy, angular rate) in robot frame
     # dt_pred: time step for prediction
     
-    # ...................
+    Jac11 = dt_pred * np.cos(x[2])
+    Jac12 = dt_pred * np.sin(x[2])
+    
+    Jac21 = dt_pred * (-np.sin(x[2]))
+    Jac22 = dt_pred * np.cos(x[2])
+    
+    Jac = np.array([[Jac11[0], Jac12[0], 0], [Jac21[0], Jac22[0], 0], [0, 0, dt_pred]])
 
     return Jac
 
@@ -265,11 +292,16 @@ for k in range(1, simulation.nSteps):
 
     # Get odometry measurements
     xOdom, u_tilde = simulation.get_odometry(k)
+    
+    # Calculate f(x,u) Jacobian wrt x
+    jacF = F(xEst, u_tilde, dt_pred)
+    
+    # Calculate f(x,u) Jacobian wrt w
+    jacG = G(xEst, u_tilde, dt_pred)
 
     # Kalman prediction
-    ## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    xPred = motion_model(xTrue, xOdom, dt_pred)
-    # PPred = #...................
+    xPred = motion_model(xEst, u_tilde, dt_pred)
+    PPred = jacF @ PEst @ jacF.T + jacG @ QEst @ jacG.T
 
     # Get random landmark observation
     [z, iFeature] = simulation.get_observation(k)
@@ -282,12 +314,11 @@ for k in range(1, simulation.nSteps):
         H = get_obs_jac(xPred, iFeature, Map)
 
         # compute Kalman gain - with dir and distance
-        ## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        # Innov = #...................         # observation error (innovation)
+        Innov = z - zPred         # observation error (innovation)
         Innov[1, 0] = angle_wrap(Innov[1, 0])
-        ## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        # S = #...................
-        # K = #...................
+        S = REst + H @ PPred @ H.T
+        K = PEst @ H.T @ np.linalg.inv(S)
+        
 
         # Compute Kalman gain to use only distance
 #        Innov = #...................       # observation error (innovation)
@@ -303,13 +334,10 @@ for k in range(1, simulation.nSteps):
 #        K = #...................
 
         # perform kalman update
-        ## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        # xEst =  #...................
+        xEst =  xPred + K @ Innov
         xEst[2, 0] = angle_wrap(xEst[2, 0])
         
-        ## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        # PEst = #...................
-        
+        PEst = (np.eye(3) - K @ H) @ PPred
         
         PEst = 0.5 * (PEst + PEst.T)  # ensure symetry
 
