@@ -63,13 +63,13 @@ class Simulation:
 
 
     # generate a noisy observation of a random feature
-    def get_observation(self, k):
+    def get_observation(self, k, notValidCondition):
         # Ensuring random repetability for given k
         np.random.seed(seed*3 + k)
 
         # Model
         if k*self.dt_pred % self.dt_meas == 0:
-            notValidCondition = False # False: measurement valid / True: measurement not valid
+            # notValidCondition = False: measurement valid / True: measurement not valid
             if notValidCondition:
                 z = None
                 iFeature = None
@@ -304,7 +304,11 @@ for k in range(1, simulation.nSteps):
     PPred = jacF @ PEst @ jacF.T + jacG @ QEst @ jacG.T
 
     # Get random landmark observation
-    [z, iFeature] = simulation.get_observation(k)
+    if k >= 2500 and k <= 3500:
+        notValidCondition = True
+    else:
+        notValidCondition = False
+    [z, iFeature] = simulation.get_observation(k, notValidCondition)
 
     if z is not None:
         # Predict observation
