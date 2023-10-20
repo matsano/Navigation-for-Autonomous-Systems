@@ -92,7 +92,7 @@ def motion_model(x, u, dt_pred):
     # x: estimated state (x, y, heading)
     # u: control input or odometry measurement in body frame (Vx, Vy, angular rate)
 
-    # Compute the dynamic model
+    # Compute the evolution model
     xPred = tcomp(x, u, dt_pred)
 
     # Fit angle
@@ -110,7 +110,7 @@ def observation_model(xVeh, iFeature, Map):
     # Landmark selected with index iFeature
     landmark_selected = Map[:, iFeature]
     
-    # Calculate z
+    # Calculate observation model
     z11 = np.sqrt((landmark_selected[0] - xVeh[0])**2 + (landmark_selected[1] - xVeh[1])**2)
     z12 = np.arctan2((landmark_selected[1] - xVeh[1]), (landmark_selected[0] - xVeh[0])) - xVeh[2]
     
