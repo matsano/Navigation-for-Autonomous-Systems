@@ -266,6 +266,8 @@ RTrue = np.diag([5.0, 6*pi/180]) ** 2
 # Modeled errors used in the Kalman filter process
 QEst = 100*np.eye(3, 3) @ QTrue
 REst = 10*np.eye(2, 2) @ RTrue
+# REst = 10*np.eye(1, 1) @ np.eye(1, 1)*RTrue[0, 0] # range only
+# REst = 10*np.eye(1, 1) @ np.eye(1, 1)*RTrue[1, 1] # angles only
 
 # initial conditions
 xTrue = np.array([[1, -40, -pi/2]]).T
@@ -304,10 +306,11 @@ for k in range(1, simulation.nSteps):
     PPred = jacF @ PEst @ jacF.T + jacG @ QEst @ jacG.T
 
     # Get random landmark observation
-    if k >= 2500 and k <= 3500:
-        notValidCondition = True
-    else:
-        notValidCondition = False
+    notValidCondition = False
+    # if k >= 2500 and k <= 3500:
+    #     notValidCondition = True
+    # else:
+    #     notValidCondition = False
     [z, iFeature] = simulation.get_observation(k, notValidCondition)
 
     if z is not None:
@@ -322,20 +325,21 @@ for k in range(1, simulation.nSteps):
         Innov[1, 0] = angle_wrap(Innov[1, 0])
         S = REst + H @ PPred @ H.T
         K = PEst @ H.T @ np.linalg.inv(S)
-        
 
         # Compute Kalman gain to use only distance
-#        Innov = #...................       # observation error (innovation)
-#        H = #...................
-#        S = #...................
-#        K = #...................
+        # Innov = z[0] - zPred[0]       # observation error (innovation)
+        # Innov = Innov.reshape((1, 1))
+        # H = H[0].reshape((1,3))
+        # S = REst + H @ PPred @ H.T
+        # K = PEst @ H.T @ np.linalg.inv(S)
 
         # Compute Kalman gain to use only direction
-#        Innov = #...................       # observation error (innovation)
-#        Innov[1, 0] = angle_wrap(Innov[1, 0])
-#        H = #...................           # observation error (innovation)
-#        S = #...................
-#        K = #...................
+        # Innov = z[1] - zPred[1]       # observation error (innovation)
+        # Innov = Innov.reshape((1, 1))
+        # Innov[0, 0] = angle_wrap(Innov[0, 0])
+        # H = H[1].reshape((1,3))
+        # S = REst + H @ PPred @ H.T
+        # K = PEst @ H.T @ np.linalg.inv(S)
 
         # perform kalman update
         xEst =  xPred + K @ Innov
