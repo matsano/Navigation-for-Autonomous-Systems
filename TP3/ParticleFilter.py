@@ -94,7 +94,11 @@ def motion_model(x, u, dt_pred):
     # x: estimated state (x, y, heading)
     # u: control input (Vx, Vy, angular rate)
     
-    # ...................
+    # Compute the evolution model
+    xPred = tcomp(x, u, dt_pred)
+
+    # Fit angle
+    xPred[2, 0] = angle_wrap(xPred[2, 0])
     
     return xPred
 
@@ -105,7 +109,14 @@ def observation_model(xVeh, iFeature, Map):
     # iFeature: observed amer index
     # Map: map of all amers
     
-    # ...................
+    # Landmark selected with index iFeature
+    landmark_selected = Map[:, iFeature]
+    
+    # Calculate observation model
+    z11 = np.sqrt((landmark_selected[0] - xVeh[0])**2 + (landmark_selected[1] - xVeh[1])**2)
+    z12 = np.arctan2((landmark_selected[1] - xVeh[1]), (landmark_selected[0] - xVeh[0])) - xVeh[2]
+    
+    z = np.array([z11, z12])
     
     return z
 
@@ -309,8 +320,9 @@ for k in range(1, simulation.nSteps):
 
     # do prediction
     # for each particle we add control vector AND noise
-    
-    # ...................
+    vk = np.sqrt(np.diag([QEst[0,0],QEst[1,1],QEst[2,2]])) @ np.random.randn(3,nParticles)
+    for i in range(nParticles):
+        xParticles[:, i] = motion_model(xEst, u_tilde + vk[:, i].reshape(3, 1), dt_pred).reshape(1, -1)
 
     # observe a random feature
     [z, iFeature] = simulation.get_observation(k)
@@ -318,33 +330,33 @@ for k in range(1, simulation.nSteps):
     if z is not None:
         for p in range(nParticles):
             # Predict observation from the particle position
-            zPred = # ...................
+            zPred = observation_model(xParticles[:,[p]].reshape(3, 1), iFeature, Map)
 
             # Innovation : perception error
-            Innov = # ...................
+            Innov = z - zPred
             Innov[1] = angle_wrap(Innov[1])
 
             # Compute particle weight using gaussian model
-            wp[p] = # ...................
+            wp[p] = wp[p] * np.exp((-1/2) * (Innov.T @ np.linalg.inv(REst) @ Innov)[0, 0])
     # Normalization
-    wp = # ...................
-    
+    wp = wp / np.sum(wp)
     
     # Compute position as weighted mean of particles
-    xEst = # ...................
+    xEst = np.average(xParticles, axis=1, weights=wp)
+    xEst = np.expand_dims(xEst, axis=1)
 
     # Compute particles std deviation
-    xSTD = # ...................
-    
+    xSTD = np.sqrt(np.average((xParticles-xEst)*(xParticles-xEst),
+               axis=1, weights=wp))
+    xSTD = np.expand_dims(xSTD, axis=1)
     
     # Reampling
     theta_eff = 0.1
     Nth = nParticles * theta_eff
-    Neff = # ...................
+    Neff = 1 / np.sum(wp**2)
     if Neff < Nth:
         # Particle resampling
-        xParticles, wp = # ...................
-
+        xParticles, wp = re_sampling(xParticles, wp)
 
     # store data history
     hxTrue = np.hstack((hxTrue, simulation.xTrue))
