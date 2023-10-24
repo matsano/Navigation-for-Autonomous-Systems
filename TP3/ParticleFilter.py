@@ -63,13 +63,13 @@ class Simulation:
 
 
     # generate a noisy observation of a random feature
-    def get_observation(self, k):
+    def get_observation(self, k, notValidCondition):
         # Ensuring random repetability for given k
         np.random.seed(seed*3 + k)
 
         # Model
         if k*self.dt_pred % self.dt_meas == 0:
-            notValidCondition = False # False: measurement valid / True: measurement not valid
+            # notValidCondition = False # False: measurement valid / True: measurement not valid
             if notValidCondition:
                 z = None
                 iFeature = None
@@ -325,7 +325,12 @@ for k in range(1, simulation.nSteps):
         xParticles[:, i] = motion_model(xEst, u_tilde + vk[:, i].reshape(3, 1), dt_pred).reshape(1, -1)
 
     # observe a random feature
-    [z, iFeature] = simulation.get_observation(k)
+    notValidCondition = False
+    # if k >= 250 and k <= 350:
+    #     notValidCondition = True
+    # else:
+    #     notValidCondition = False
+    [z, iFeature] = simulation.get_observation(k, notValidCondition)
 
     if z is not None:
         for p in range(nParticles):
