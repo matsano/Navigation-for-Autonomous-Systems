@@ -148,6 +148,40 @@ def re_sampling(px, pw):
 
     return px, pw
 
+# Função de replicação determinística
+def residual_resampling(px, pw):
+    nParticles = px.shape[1]
+    resamples = np.zeros(nParticles, dtype=int)
+    new_px = np.zeros_like(px)
+    new_pw = np.zeros_like(pw)
+    
+    # Calcula o peso médio
+    mean_weight = np.mean(pw)
+    
+    # Calcula os resíduos
+    residuals = pw / mean_weight
+    
+    # Calcula o número de cópias de cada partícula
+    for i in range(nParticles):
+        resamples[i] = int(residuals[i])
+    
+    # Fração de partículas que ainda precisam ser replicadas
+    remaining = residuals - resamples
+    
+    # Cria um vetor cumulativo de resíduos
+    cumulative_residues = np.cumsum(remaining)
+    
+    # Faz a replicação das partículas baseada nos resíduos
+    for j in range(nParticles):
+        choice = np.random.rand()  # Escolhe um valor aleatório entre 0 e 1
+        k = 0
+        while cumulative_residues[k] < choice:
+            k += 1
+        new_px[:, j] = px[:, k]
+        new_pw[j] = 1.0 / nParticles
+    
+    return new_px, new_pw
+
 
 # ---- Utils functions ----
 
@@ -361,7 +395,8 @@ for k in range(1, simulation.nSteps):
     Neff = 1 / np.sum(wp**2)
     if Neff < Nth:
         # Particle resampling
-        xParticles, wp = re_sampling(xParticles, wp)
+        # xParticles, wp = re_sampling(xParticles, wp)
+        xParticles, wp = residual_resampling(xParticles, wp)
 
     # store data history
     hxTrue = np.hstack((hxTrue, simulation.xTrue))
