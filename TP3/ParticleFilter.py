@@ -6,6 +6,7 @@ authors: Goran Frehse, David Filliat, Nicolas Merlinge
 
 from math import sin, cos, atan2, pi
 import matplotlib.pyplot as plt
+from matplotlib import cm
 import numpy as np
 seed = 123456
 np.random.seed(seed)
@@ -148,32 +149,35 @@ def re_sampling(px, pw):
 
     return px, pw
 
-# Função de replicação determinística
+# Another method to resampling
 def residual_resampling(px, pw):
+    '''
+    Residual re-sampling
+    '''
     nParticles = px.shape[1]
     resamples = np.zeros(nParticles, dtype=int)
     new_px = np.zeros_like(px)
     new_pw = np.zeros_like(pw)
     
-    # Calcula o peso médio
+    # Calculate average weight
     mean_weight = np.mean(pw)
     
-    # Calcula os resíduos
+    # Calculate residuals
     residuals = pw / mean_weight
     
-    # Calcula o número de cópias de cada partícula
+    # Calculates the number of copies of each particle
     for i in range(nParticles):
         resamples[i] = int(residuals[i])
     
-    # Fração de partículas que ainda precisam ser replicadas
+    # Fraction of particles that still need to be replicated
     remaining = residuals - resamples
     
-    # Cria um vetor cumulativo de resíduos
+    # Cumulative sum of the residues
     cumulative_residues = np.cumsum(remaining)
     
-    # Faz a replicação das partículas baseada nos resíduos
+    # Replicates particles based on waste
     for j in range(nParticles):
-        choice = np.random.rand()  # Escolhe um valor aleatório entre 0 e 1
+        choice = np.random.rand()
         k = 0
         while cumulative_residues[k] < choice:
             k += 1
@@ -279,6 +283,27 @@ def plotParticles(simulation, k, iFeature, hxTrue, hxOdom, hxEst, hxError, hxSTD
     if save: plt.savefig(r'outputs/SRL' + str(k) + '.png')
 #        plt.pause(0.01)
 
+def plotWeights(weights):
+    # Set the number of bins for the histogram
+    num_bins = 10
+
+    # Create a histogram
+    hist, edges = np.histogram(weights, bins=num_bins)
+
+    # Create a color palette with a color gradient
+    colors = plt.cm.get_cmap('viridis', num_bins)
+
+    plt.figure(figsize=(8, 6))
+
+    # Plot the histogram
+    for i in range(num_bins):
+        plt.bar(edges[:-1][i], hist[i], width=np.diff(edges)[i], color=colors(i / num_bins), edgecolor='k')
+
+    plt.xlabel('Weights')
+    plt.ylabel('Frequency')
+    plt.title('Weights histogram')
+    plt.show()
+
 
 # =============================================================================
 # Main Program
@@ -344,6 +369,7 @@ simulation = Simulation(Tf, dt_pred, xTrue, QTrue, xOdom, Map, RTrue, dt_meas)
 if is_plot: plotParticles(simulation, 0, None, hxTrue, hxOdom, hxEst, hxError, hxSTD, save = True)
 
 # Temporal loop
+first_resamp = True
 for k in range(1, simulation.nSteps):
 #    print(k)
     # Simulate robot motion
@@ -390,13 +416,17 @@ for k in range(1, simulation.nSteps):
     xSTD = np.expand_dims(xSTD, axis=1)
     
     # Reampling
-    theta_eff = 0.1
+    theta_eff = 0.75
     Nth = nParticles * theta_eff
     Neff = 1 / np.sum(wp**2)
     if Neff < Nth:
+        # Get the weights histogram just before the first resampling
+        if first_resamp:
+            wp_hist = wp.copy()
+            first_resamp = False
         # Particle resampling
-        # xParticles, wp = re_sampling(xParticles, wp)
-        xParticles, wp = residual_resampling(xParticles, wp)
+        xParticles, wp = re_sampling(xParticles, wp)
+        # xParticles, wp = residual_resampling(xParticles, wp)
 
     # store data history
     hxTrue = np.hstack((hxTrue, simulation.xTrue))
@@ -417,3 +447,6 @@ tErrors = np.sqrt(np.square(hxError[0, :]) + np.square(hxError[1, :]))
 print("Mean (var) translation error : {:e} ({:e})".format(np.mean(tErrors), np.var(tErrors)))
 print("Press Q in figure to finish...")
 plt.show()
+
+# Plot histogram of the first weights before resampling
+plotWeights(wp_hist)
