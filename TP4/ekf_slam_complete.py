@@ -129,7 +129,13 @@ def calc_input():
     """
 
     v = 1  # [m/s]
+    
+    # Long loop
     yaw_rate = 0.1  # [rad/s]
+    
+    # Short loop
+    # yaw_rate = 0.2  # [rad/s]
+    
     u = np.array([[v, yaw_rate]]).T
     return u
 
@@ -350,10 +356,27 @@ def main():
     time = 0.0
 
     # Define landmark positions [x, y]
-    Landmarks = np.array([[0.0, 5.0],
-                          [11.0, 1.0],
-                          [3.0, 15.0],
-                          [-5.0, 20.0]])
+    
+    # Default
+    # Landmarks = np.array([[0.0, 5.0],
+    #                       [11.0, 1.0],
+    #                       [3.0, 15.0],
+    #                       [-5.0, 20.0]])
+    
+    # Spare map with few landmarks
+    Landmarks = np.array([[2.5, 0.0],
+                          [2.5, 2.5],
+                          [-2.5, 2.5],
+                          [-2.5, 0.0]])
+    
+    # Dense map with many landmarks
+    # Landmarks = np.array([[0.0, 5.0],
+    #                       [11.0, 1.0],
+    #                       [3.0, 15.0],
+    #                       [-5.0, 20.0],
+    #                       [-2.5, 2.5],
+    #                       [2.5, 5],
+    #                       [4, 7]])
 
     # Init state vector [x y yaw]' and covariance for Kalman
     xEst = np.zeros((STATE_SIZE, 1))
