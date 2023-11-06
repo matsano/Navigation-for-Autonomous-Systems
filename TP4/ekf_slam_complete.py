@@ -15,9 +15,10 @@ DT = 0.1  # time tick [s]
 SIM_TIME = 80.0  # simulation time [s]
 MAX_RANGE = 10.0  # maximum observation range
 M_DIST_TH = 9.0  # Threshold of Mahalanobis distance for data association.
+# M_DIST_TH = 5.0 # Short loop
 STATE_SIZE = 3  # State size [x,y,yaw]
 LM_SIZE = 2  # LM state size [x,y]
-KNOWN_DATA_ASSOCIATION = 1  # Whether we use the true landmarks id or not
+KNOWN_DATA_ASSOCIATION = 0  # Whether we use the true landmarks id or not
 
 # Simulation parameter
 # noise on control input
@@ -373,6 +374,16 @@ def main():
     #                       [5.0, 15.0],
     #                       [5.0, 10.0],
     #                       [5.0, 5.0]])
+    
+    # Landmarks = np.array([[-2.5, 2.5],
+    #                       [-2.5, 5.0],
+    #                       [-2.5, 7.5],
+    #                       [0.0, 2.5],
+    #                       [0.0, 5.0],
+    #                       [0.0, 7.5],
+    #                       [2.5, 2.5],
+    #                       [2.5, 5.0],
+    #                       [2.5, 7.5]])
     
     # Spare map with few landmarks
     Landmarks = np.array([[-2.5, 0.0],
