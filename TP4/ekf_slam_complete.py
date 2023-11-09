@@ -444,7 +444,7 @@ def main():
             ax1.plot(hxTrue[0, :], hxTrue[1, :], "-k")
 
             # Plot odometry trajectory
-            ax1.plot(hxDR[0, :], hxDR[1, :], "-k")
+            ax1.plot(hxDR[0, :], hxDR[1, :], "-g")
 
             # Plot estimated trajectory, pose and landmarks
             ax1.plot(hxEst[0, :], hxEst[1, :], "-r")
