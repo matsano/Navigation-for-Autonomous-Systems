@@ -359,10 +359,10 @@ def main():
     # Define landmark positions [x, y]
     
     # Default
-    # Landmarks = np.array([[0.0, 5.0],
-    #                       [11.0, 1.0],
-    #                       [3.0, 15.0],
-    #                       [-5.0, 20.0]])
+    Landmarks = np.array([[0.0, 5.0],
+                          [11.0, 1.0],
+                          [3.0, 15.0],
+                          [-5.0, 20.0]])
     
     # Dense map with many landmarks inside the robot perception radius
     # Landmarks = np.array([[0.0, 10.0],
@@ -386,9 +386,9 @@ def main():
     #                       [2.5, 7.5]])
     
     # Spare map with few landmarks
-    Landmarks = np.array([[-2.5, 0.0],
-                          [2.5, 0.0],
-                          [0.0, 2.5]])
+    # Landmarks = np.array([[-2.5, 0.0],
+    #                       [2.5, 0.0],
+    #                       [0.0, 2.5]])
     
 
     # Init state vector [x y yaw]' and covariance for Kalman
