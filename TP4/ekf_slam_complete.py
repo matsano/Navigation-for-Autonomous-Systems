@@ -28,9 +28,9 @@ Py_sim = (1 * np.diag([0.1, np.deg2rad(5)])) ** 2
 
 # Kalman filter Parameters
 # Estimated input noise for Kalman Filter
-Q = 2 * Q_sim
+Q = 1 * Q_sim
 # Estimated measurement noise for Kalman Filter
-Py = 2 * Py_sim
+Py = 1 * Py_sim
 
 # Initial estimate of pose covariance
 initPEst = 0.01 * np.eye(STATE_SIZE)
