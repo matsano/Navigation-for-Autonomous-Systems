@@ -295,7 +295,7 @@ def calc_innovation(xEst, PEst, y, LMid):
     return innov, S, H
 
 
-def ekf_slam(xEst, PEst, u, y):
+def ekf_slam(xEst, PEst, u, y, n_update_LM):
     """
     Apply one step of EKF predict/correct cycle
     """
@@ -333,7 +333,7 @@ def ekf_slam(xEst, PEst, u, y):
             
             # Extend state and covariance matrix
             for i in range(3):
-                # Create the new landmark
+                # Create the new landmarks
                 y[iy, 0] = 2 + 7*i
                 xEst = np.vstack((xEst, calc_landmark_position(xEst, y[iy, :])))
 
@@ -353,10 +353,28 @@ def ekf_slam(xEst, PEst, u, y):
                         
             PEst = (np.eye(len(xEst)) - K @ H) @ PEst
             PEst = 0.5 * (PEst + PEst.T)  # Ensure symetry
+            
+            # Add update
+            n_update_LM[min_id] += 1
+            
+            # If percentage is greater than the threshold, remove the others landmarks
+            n_update_percentage = n_update_LM / np.sum(n_update_LM)
+            if (np.max(n_update_percentage) > 0.85) and (not np.any(n_update_percentage == 0)):
+                index_not_max = np.where(n_update_percentage != np.max(n_update_percentage))[0]
+                index_to_delete = []
+                for j in index_not_max:
+                    index_to_delete.append(3+2*j)
+                    index_to_delete.append(4+2*j)
+                
+                if max(index_to_delete) < len(PEst):
+                    PEst = np.delete(PEst, index_to_delete, axis=0)
+                    PEst = np.delete(PEst, index_to_delete, axis=1)
+                    xEst = np.delete(xEst, index_to_delete, axis=0)
+                
         
     xEst[2] = pi_2_pi(xEst[2])
 
-    return xEst, PEst
+    return xEst, PEst, n_update_LM
 
 
 # --- Main script
@@ -388,6 +406,9 @@ def main():
 
     # Init dead reckoning (sum of individual controls)
     xDR = np.zeros((STATE_SIZE, 1))
+    
+    # Initialize how many the covariance of the landmarks position was updated
+    n_update_LM = np.zeros(3*len(Landmarks))
 
     # Init history
     hxEst = xEst
@@ -407,7 +428,7 @@ def main():
         # Simulate motion and generate u and y
         uTrue = calc_input()
         xTrue, y, xDR, u = observation(xTrue, xDR, uTrue, Landmarks)
-        xEst, PEst = ekf_slam(xEst, PEst, u, y)
+        xEst, PEst, n_update_LM = ekf_slam(xEst, PEst, u, y, n_update_LM)
 
         # store data history
         hxEst = np.hstack((hxEst, xEst[0:STATE_SIZE]))
@@ -467,7 +488,6 @@ def main():
             ax5.set_ylabel(r"$\theta$")
 
             plt.pause(0.001)
-
 
     plt.savefig('EKFSLAM.png')
 
