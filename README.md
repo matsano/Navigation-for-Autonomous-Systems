@@ -1,5 +1,5 @@
 # Navigation-for-Autonomous-Systems
-Navigation for Autonomous Systems Course (ROB312)
+Navigation for Autonomous Systems Course
 
 ## 📋 Description
 TPs code implemented during the course:
